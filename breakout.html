@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    
+    <head>
+        <title>Apple II Breakout by Woz</title>
+        <meta name="description" content="An in-depth analysis and emulation of Steve Wozniak's Breakout game for the Apple II personal computer. breakout, retro computing, retro video games, woz, apple2, appleii, apple ii, atari, 1980s, emulation">
+        
+        <link rel="stylesheet" href="breakout.css">
+        <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css">
+        <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    </head>
+    <body onload="buildPage()">
+        <script src="breakout-source.js"></script>
+        <script src="breakout-simulator.js"></script>
+        <script src="machine.js"></script>
+        <script src="animation.js"></script>
+
+        <div id="header">
+            <h1>ANNOTATED APPLE ][ BREAKOUT</h1>
+            <button onclick="clearInterval(runTimer); Machine.step()">Step</button>
+            <button onclick="runTimer = setInterval(function () { Machine.step() }, 10)">Run</button>
+        </div>
+
+        <div id="leftcontent">
+            <div id="source">
+            </div>
+        </div>
+
+        <div id="rightcontent">
+            
+            <canvas id="screen" width=400 height=300></canvas>
+            <div id="vars"></div>
+            <div id="anno"></div>
+        </div>
+
+
+        <div id="dimmer" class="dimmer"></div>
+          
+        <div id="anno-line5" class="popup">
+            <div class="anno-line">5 GOTO 15</div>
+            <img src="basic-tokens.png" style="float:right; margin: 0px; border: 0px"/>
+            <div class="anno-text">
+                Woz's Breakout program begins in a surprising way. The very first thing the program does is jump elsewhere into the code. While this might look odd to a developer today, this was a very common pattern to see in BASIC programs
+                of the time. To understand the reason for this, let's take a look at how Integer BASIC programs are stored and
+                executed on an Apple ][
+            </div>
+            <div class="anno-text">
+                
+                Integer BASIC programs are stored in memory in a tokenized format using a byte for each statement like PRINT,
+                GOSUB, etc. The lines of the program are stored beginning at the low end of memory (set by the LOMEM: statement)
+                and build up, while variables are stored starting at the top end of memory (HIMEM: of course) and build down
+                with the hope the two never meet. Lines of the program are stored in sorted order where first the line number
+                itself is stored, followed by the BASIC tokens, variable references, constants etc. that comprise the line.
+            </div>
+            <div class="anno-text">
+                When the BASIC interpreter executes a GOTO, GOSUB, etc. token it must search the lines of the program starting
+                at the beginning until it finds the referenced line number, then it jumps to that line and continues executing
+                the program. There is no index, cache or other data structure used -- the code is searched linearly every time.
+                This means that it is faster to find a lower line number of code than one stored later in the program.
+            </div>
+            <div class="anno-text">
+                So it makes sense that the most performance-critical parts of the program are stored in low line numbers near
+                the beginning of the code. And indeed this is case with Breakout, as the subroutine that reads the paddle controller and handles moving the ball is the second line of code. It's stored here for performance reasons
+                and that is why the first thing the program does is jump over it to get to the real beginning of the program.
+            </div>
+        </div>
+<script>
+var runTimer = 0;
+
+function buildPage() {
+    Machine.init(document.getElementById("screen"), document.getElementById("vars"), 
+                 document.getElementById("anno"), breakoutProgram, document.getElementById("screen"));
+    Machine.gr();
+
+    for (var i=0; i<16; ++i) {
+        Machine.setColor(i);
+        Machine.vlin(0,40,i*2);
+    }
+    Machine.vtab(22);
+    Machine.tab(0);
+    Machine.print("          111111111122222222223333333333");
+    Machine.print("0123456789012345678901234567890123456789");
+
+    sourceElement = document.getElementById("source");
+    buildSourceDOM(sourceElement);
+
+    document.onmousemove = mouseMoved;
+
+    // Highlight the first line of the BASIC program
+    Machine.program[Machine.pc].basicElement.className = "basic step";
+    AnimateBorderRightColor( Machine.program[Machine.pc].iconElement, [255,255,255], [0,80,140],  300);
+
+    Machine.program[Machine.pc].annotationElement.style = "display: block";
+//    document.getElementById("dimmer").style = "display: block";
+    Machine.program[Machine.pc].basicElement.style = "z-index: 2000";
+}
+
+var mouseX = 0;
+var mouseY = 0;
+
+function mouseMoved(event) {
+        var dot, eventDoc, doc, body, pageX, pageY;
+
+        event = event || window.event; // IE-ism
+
+        // If pageX/Y aren't available and clientX/Y are,
+        // calculate pageX/Y - logic taken from jQuery.
+        // (This is to support old IE)
+        if (event.pageX == null && event.clientX != null) {
+            eventDoc = (event.target && event.target.ownerDocument) || document;
+            doc = eventDoc.documentElement;
+            body = eventDoc.body;
+
+            event.pageX = event.clientX +
+              (doc && doc.scrollLeft || body && body.scrollLeft || 0) -
+              (doc && doc.clientLeft || body && body.clientLeft || 0);
+            event.pageY = event.clientY +
+              (doc && doc.scrollTop  || body && body.scrollTop  || 0) -
+              (doc && doc.clientTop  || body && body.clientTop  || 0 );
+        }
+
+        mouseX = event.pageX;
+        mouseY = event.pageY;
+    }
+
+</script>
+</body>
+        
+    </body>
+</html>
+<!--
+
+    [[[[[[[[[[[[[[[      ]]]]]]]]]]]]]]]
+    [::::::::::::::      ::::::::::::::]
+    [::::::::::::::      ::::::::::::::]
+    [::::::[[[[[[[:      :]]]]]]]::::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[     CODE THE WEB     ]:::::]
+    [:::::[  http://brackets.io  ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [:::::[                      ]:::::]
+    [::::::[[[[[[[:      :]]]]]]]::::::]
+    [::::::::::::::      ::::::::::::::]
+    [::::::::::::::      ::::::::::::::]
+    [[[[[[[[[[[[[[[      ]]]]]]]]]]]]]]]
+
+-->
